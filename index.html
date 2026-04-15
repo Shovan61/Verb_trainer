@@ -671,6 +671,31 @@
         <div class="hdr-r">
           <button
             class="btn"
+            id="playAllBtn"
+            onclick="playAllAudio()"
+            style="
+              background: var(--green);
+              color: #0a0c10;
+              border-color: var(--green);
+            "
+          >
+            ▶ Play All (Page)
+          </button>
+          <button
+            class="btn"
+            id="stopBtn"
+            onclick="stopAudio()"
+            style="
+              display: none;
+              background: var(--red);
+              color: #fff;
+              border-color: var(--red);
+            "
+          >
+            ■ Stop
+          </button>
+          <button
+            class="btn"
             onclick="loadNewFile()"
             title="Load a different JSON file"
           >
@@ -735,6 +760,87 @@
     </div>
 
     <script>
+      // ── PLAY ALL AUDIO ──
+      let playAllQueue = [];
+      let isPlayingAll = false;
+
+      function playAllAudio() {
+        if (isPlayingAll) {
+          stopAudio();
+          isPlayingAll = false;
+          playAllQueue = [];
+          const btn = document.getElementById("playAllBtn");
+          btn.textContent = "▶ Play All (Page)";
+          btn.style.background = "var(--green)";
+          return;
+        }
+
+        // Collect all German sentences from CURRENT PAGE
+        const start = (currentPage - 1) * pageSize;
+        const end = Math.min(start + pageSize, filtered.length);
+        const pageVerbs = filtered.slice(start, end);
+
+        playAllQueue = [];
+        for (let i = 0; i < pageVerbs.length; i++) {
+          const v = pageVerbs[i];
+          if (v.present && v.present.de_sentence) {
+            playAllQueue.push(v.present.de_sentence);
+          }
+          if (v.past && v.past.de_sentence) {
+            playAllQueue.push(v.past.de_sentence);
+          }
+          if (v.perfect && v.perfect.de_sentence) {
+            playAllQueue.push(v.perfect.de_sentence);
+          }
+          if (v.future && v.future.de_sentence) {
+            playAllQueue.push(v.future.de_sentence);
+          }
+        }
+
+        if (playAllQueue.length === 0) {
+          alert("No German sentences available on this page.");
+          return;
+        }
+
+        isPlayingAll = true;
+        const btn = document.getElementById("playAllBtn");
+        btn.textContent = "⏸ Stop Playing";
+        btn.style.background = "var(--orange)";
+
+        playNextInQueue();
+      }
+
+      function playNextInQueue() {
+        if (!isPlayingAll || playAllQueue.length === 0) {
+          isPlayingAll = false;
+          const btn = document.getElementById("playAllBtn");
+          btn.textContent = "▶ Play All (Page)";
+          btn.style.background = "var(--green)";
+          return;
+        }
+
+        const text = playAllQueue.shift();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "de-DE";
+        if (germanVoice) utterance.voice = germanVoice;
+        utterance.rate = 0.85;
+        utterance.onend = () => setTimeout(() => playNextInQueue(), 400);
+        utterance.onerror = () => playNextInQueue();
+        speechSynthesis.speak(utterance);
+      }
+
+      // Update stopAudio to also cancel play all
+      const originalStop = stopAudio;
+      stopAudio = function () {
+        originalStop();
+        if (isPlayingAll) {
+          isPlayingAll = false;
+          playAllQueue = [];
+          const btn = document.getElementById("playAllBtn");
+          btn.textContent = "▶ Play All (Page)";
+          btn.style.background = "var(--green)";
+        }
+      };
       // ── SPEECH ──
       let germanVoice = null;
       function initVoices() {
@@ -855,7 +961,8 @@
       function loadDemo() {
         document.getElementById("setupBox").style.display = "none";
         document.getElementById("loadingProgress").style.display = "block";
-        document.getElementById("loadSub").textContent = "Loading Cached data...";
+        document.getElementById("loadSub").textContent =
+          "Loading Cached data...";
         document.getElementById("pFill").style.width = "80%";
 
         const demo = [
