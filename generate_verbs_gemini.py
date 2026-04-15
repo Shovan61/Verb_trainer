@@ -1,16 +1,14 @@
-#!/usr/bin/env python3
 """
-generate_verbs_gemini.py  (fixed version)
+generate_verbs_gemini.py  
 ==========================================
-Uses gemini-2.0-flash-lite  — higher free quota, less rate limiting
-Free tier: 30 requests/min, 1500/day
+Uses gemini-3-flash  — higher free quota, less rate limiting
 """
 
 import os, sys, json, time, argparse
 
 SOURCE_FILE   = "verbs_source.json"
 OUTPUT_FILE   = "verbs_generated.json"
-MODEL         = "gemini-3-flash-preview"   # <-- higher free quota than flash
+MODEL         = "gemini-3-flash-preview"   
 BATCH_SIZE    = 15
 DELAY_SECONDS = 2   # 2.5s between batches = ~24 req/min, safely under 30 limit
 
