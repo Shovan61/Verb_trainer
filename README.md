@@ -1,3 +1,3 @@
 # Verb_trainer
-Live: https://extraordinary-paprenjak-58bef9.netlify.app/
-AI Model: OpenAI 120B
+<div> Live: https://stately-quokka-2ba574.netlify.app/ </div>
+<p>AI Model: Gemini 3 Flash</p>
