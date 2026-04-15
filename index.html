@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English–German Verb Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0c10; --s1:#111318; --s2:#181c24; --s3:#1e2330;
+  --b1:#252b3a; --b2:#2e3648;
+  --gold:#e8b84b; --gold-d:rgba(232,184,75,.13);
+  --blue:#5b9cf6; --blue-d:rgba(91,156,246,.11);
+  --green:#4caf7d; --green-d:rgba(76,175,125,.11);
+  --purple:#a78bfa; --purple-d:rgba(167,139,250,.11);
+  --orange:#fb923c; --orange-d:rgba(251,146,60,.11);
+  --red:#f87171;
+  --t1:#d8dde8; --t2:#8892a4; --t3:#4a5568;
+  --r:10px;
+  --c-present:#5b9cf6; --c-past:#a78bfa; --c-perfect:#4caf7d; --c-future:#fb923c;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--t1);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
+
+/* HEADER */
+.hdr{background:linear-gradient(180deg,#0d0f16,var(--bg));border-bottom:1px solid var(--b1);padding:16px 20px 12px;position:sticky;top:0;z-index:200}
+.hdr-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.logo{font-family:'Syne',sans-serif;font-size:19px;font-weight:800;letter-spacing:-.5px}
+.logo .en{color:var(--blue)} .logo .sep{color:var(--t3);margin:0 3px} .logo .de{color:var(--gold)}
+.badge{background:var(--s2);border:1px solid var(--b1);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--t2);font-family:'JetBrains Mono',monospace}
+.badge b{color:var(--gold)}
+.hdr-r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sw{position:relative;flex:1;min-width:160px;max-width:300px}
+.sw input{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;color:var(--t1);padding:7px 12px 7px 32px;font-size:13px;font-family:inherit;outline:none;transition:border .2s}
+.sw input:focus{border-color:var(--blue)}
+.si{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:12px;pointer-events:none}
+select,.btn{background:var(--s2);border:1px solid var(--b1);border-radius:8px;color:var(--t1);padding:7px 11px;font-size:12px;font-family:inherit;cursor:pointer;outline:none;transition:all .15s;font-weight:500}
+.btn:hover,select:hover{border-color:var(--blue)}
+.btn-gold{background:var(--gold);color:#0a0c10;border-color:var(--gold);font-weight:700}
+.btn-gold:hover{filter:brightness(1.08)}
+.legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--t2)}
+.ldot{width:7px;height:7px;border-radius:50%}
+.vwarn{background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.3);border-radius:8px;padding:5px 10px;font-size:11px;color:var(--gold);display:none}
+.vwarn.show{display:block}
+
+/* LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:rgba(10,12,16,.92);z-index:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.loading-overlay.hidden{display:none}
+.loading-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--blue)}
+.loading-sub{color:var(--t2);font-size:13px}
+.progress-bar{width:320px;height:6px;background:var(--s3);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--gold));border-radius:3px;transition:width .3s;width:0%}
+.setup-box{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:24px;max-width:460px;width:90%;text-align:center}
+.setup-box h2{font-family:'Syne',sans-serif;font-size:18px;margin-bottom:10px;color:var(--t1)}
+.setup-box p{font-size:13px;color:var(--t2);line-height:1.6;margin-bottom:16px}
+.file-drop{border:2px dashed var(--b2);border-radius:8px;padding:20px;cursor:pointer;transition:all .2s;margin-bottom:12px}
+.file-drop:hover,.file-drop.dragover{border-color:var(--blue);background:var(--blue-d)}
+.file-drop p{color:var(--t2);font-size:13px;margin-bottom:6px}
+.file-drop b{color:var(--blue)}
+#fileInput{display:none}
+.or-sep{color:var(--t3);font-size:12px;margin:10px 0}
+
+/* MAIN */
+.main{padding:14px 14px 100px}
+
+/* VERB CARD */
+.vcard{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);margin-bottom:7px;overflow:hidden;transition:border-color .15s}
+.vcard:hover{border-color:var(--b2)}
+.vcard.open{border-color:var(--blue)}
+
+/* CARD HEADER */
+.ch{display:grid;grid-template-columns:44px 150px 1fr 70px 42px;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;user-select:none;transition:background .12s}
+.ch:hover{background:var(--s2)}
+.cn{color:var(--t3);font-family:'JetBrains Mono',monospace;font-size:11px;text-align:center}
+.cv{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--blue);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs{color:var(--t2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cpill{font-size:10px;font-family:'JetBrains Mono',monospace;padding:2px 7px;border-radius:10px;border:1px solid;white-space:nowrap;text-align:center}
+.cpill.ok{background:var(--green-d);color:var(--green);border-color:rgba(76,175,125,.3)}
+.cpill.no{background:var(--s2);color:var(--t3);border-color:var(--b1)}
+.ctog{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:var(--s2);border:1px solid var(--b1);color:var(--t2);font-size:9px;transition:all .15s;flex-shrink:0}
+.vcard.open .ctog{background:var(--blue-d);border-color:rgba(91,156,246,.4);color:var(--blue);transform:rotate(180deg)}
+
+/* CARD BODY */
+.cbody{display:none;border-top:1px solid var(--b1)}
+.vcard.open .cbody{display:block}
+
+/* NO DATA STATE */
+.nodata{padding:20px;text-align:center;color:var(--t2);font-size:13px}
+.nodata b{color:var(--gold)}
+
+/* TENSE GRID */
+.tgrid{display:grid;grid-template-columns:1fr 1fr}
+.tblock{padding:14px 16px;border-right:1px solid var(--b1);border-bottom:1px solid var(--b1)}
+.tblock:nth-child(2){border-right:none}
+.tblock:nth-child(3){border-bottom:none}
+.tblock:nth-child(4){border-right:none;border-bottom:none}
+.tlabel{font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.tdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* LANG BLOCK */
+.lb{margin-bottom:6px}
+.ltag{display:inline-block;font-size:9px;font-family:'JetBrains Mono',monospace;padding:1px 5px;border-radius:3px;margin-bottom:3px;font-weight:600}
+.ltag.en{background:var(--blue-d);color:var(--blue)}
+.ltag.de{background:var(--gold-d);color:var(--gold)}
+.lverb{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:2px}
+.lsent{font-size:12px;color:var(--t2);line-height:1.45}
+.de-sent{color:#c8d4b0}
+.de-verb-col{color:var(--gold)}
+.divider{height:1px;background:var(--b1);margin:8px 0}
+
+/* AUDIO ROW */
+.audio-row{display:flex;align-items:center;gap:6px;margin-top:8px}
+.abtn{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--b2);background:var(--s3);color:var(--blue);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;flex-shrink:0}
+.abtn:hover{border-color:var(--blue);background:var(--blue-d);transform:scale(1.1)}
+.abtn.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.alabel{font-size:10px;color:var(--t3);font-family:'JetBrains Mono',monospace}
+
+/* PAGINATION */
+.pag{position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-top:1px solid var(--b1);padding:9px 18px;display:flex;align-items:center;gap:8px;z-index:100}
+.pinfo{font-size:11px;color:var(--t2);font-family:'JetBrains Mono',monospace;margin-left:auto}
+.pbtns{display:flex;gap:3px}
+.pbtn{width:28px;height:28px;border-radius:6px;border:1px solid var(--b1);background:var(--s2);color:var(--t1);cursor:pointer;font-size:12px;font-family:inherit;display:flex;align-items:center;justify-content:center;transition:all .12s}
+.pbtn:hover{border-color:var(--blue);color:var(--blue)}
+.pbtn.on{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:700}
+.pbtn:disabled{opacity:.3;cursor:not-allowed}
+
+.empty{text-align:center;padding:50px 20px;color:var(--t2)}
+.empty h3{font-size:17px;margin-bottom:6px;color:var(--t1)}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+
+@media(max-width:680px){
+  .ch{grid-template-columns:32px 110px 1fr 42px}
+  .cs{display:none}
+  .tgrid{grid-template-columns:1fr}
+  .tblock{border-right:none!important}
+  .tblock:nth-child(3){border-bottom:1px solid var(--b1)!important}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING / SETUP OVERLAY -->
+<div class="loading-overlay" id="overlay">
+  <div class="setup-box" id="setupBox">
+    <h2>🇩🇪 Verb Trainer — Load Data</h2>
+    <p>This app needs the pre-generated verb data file <b>verbs_generated.json</b>.<br>
+    Generate it once with <b>generate.py</b> (included in the ZIP), then load it here.</p>
+    <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()">
+      <p>📂 Click to load <b>verbs_generated.json</b></p>
+      <p style="font-size:11px;margin-top:4px">or drag & drop the file here</p>
+    </div>
+    <input type="file" id="fileInput" accept=".json">
+    <div class="or-sep">— or —</div>
+    <button class="btn btn-gold" onclick="loadDemo()" style="width:100%;padding:10px">▶ Load Demo (50 verbs preview)</button>
+    <p style="font-size:11px;color:var(--t3);margin-top:10px">The file stays in your browser — nothing is uploaded anywhere.</p>
+  </div>
+  <div id="loadingProgress" style="display:none;text-align:center">
+    <div class="loading-title">Loading verbs…</div>
+    <div class="loading-sub" id="loadSub">Parsing data…</div>
+    <div class="progress-bar"><div class="progress-fill" id="pFill"></div></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-top">
+    <div class="logo"><span class="en">English</span><span class="sep">/</span><span class="de">Deutsch</span> Verb Trainer</div>
+    <div class="badge">Total: <b id="totalCount">–</b></div>
+    <div class="badge">Showing: <b id="showCount">–</b></div>
+    <div id="vwarn" class="vwarn">⚠ No German TTS voice detected</div>
+    <div class="hdr-r">
+      <button class="btn" onclick="loadNewFile()" title="Load a different JSON file">📂 Load file</button>
+      <button class="btn" id="stopBtn" onclick="stopAudio()" style="display:none;background:var(--red);color:#fff;border-color:var(--red)">■ Stop</button>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="sw">
+      <span class="si">🔍</span>
+      <input type="search" id="searchInput" placeholder="Search verb or sentence…" oninput="onSearch()">
+    </div>
+    <select id="psz" onchange="onPageSizeChange()">
+      <option value="25">25 / page</option>
+      <option value="50" selected>50 / page</option>
+      <option value="100">100 / page</option>
+    </select>
+    <div class="legend">
+      <div class="leg"><div class="ldot" style="background:var(--c-present)"></div>Present</div>
+      <div class="leg"><div class="ldot" style="background:var(--c-past)"></div>Past</div>
+      <div class="leg"><div class="ldot" style="background:var(--c-perfect)"></div>Perfect</div>
+      <div class="leg"><div class="ldot" style="background:var(--c-future)"></div>Future</div>
+    </div>
+  </div>
+</div>
+
+<div class="main" id="main"></div>
+
+<div class="pag" id="pag">
+  <div class="pbtns" id="pbtns"></div>
+  <div class="pinfo" id="pinfo"></div>
+</div>
+
+<script>
+// ── SPEECH ──
+let germanVoice = null;
+function initVoices() {
+  const v = speechSynthesis.getVoices();
+  germanVoice = v.find(x => x.lang.startsWith('de') && x.localService)
+              || v.find(x => x.lang.startsWith('de')) || null;
+  if (!germanVoice) document.getElementById('vwarn').classList.add('show');
+}
+if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = initVoices;
+initVoices();
+
+let playingKey = null;
+function speakDE(text, key) {
+  stopAudio();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'de-DE'; if (germanVoice) u.voice = germanVoice; u.rate = 0.85;
+  playingKey = key; updateAudioBtns();
+  document.getElementById('stopBtn').style.display = '';
+  u.onend = u.onerror = () => { playingKey = null; updateAudioBtns(); document.getElementById('stopBtn').style.display = 'none'; };
+  speechSynthesis.speak(u);
+}
+function stopAudio() {
+  speechSynthesis.cancel(); playingKey = null; updateAudioBtns();
+  document.getElementById('stopBtn').style.display = 'none';
+}
+function updateAudioBtns() {
+  document.querySelectorAll('.abtn').forEach(b => {
+    b.classList.toggle('on', b.dataset.key === playingKey);
+    b.textContent = b.dataset.key === playingKey ? '■' : '▶';
+  });
+}
+function toggleAudio(text, key) {
+  if (playingKey === key) { stopAudio(); return; }
+  speakDE(text, key);
+}
+
+// ── DATA ──
+let DATA = [];
+let filtered = [];
+let currentPage = 1;
+let pageSize = 50;
+let searchTerm = '';
+
+// ── FILE LOADING ──
+function setupFileHandlers() {
+  const drop = document.getElementById('fileDrop');
+  const fi = document.getElementById('fileInput');
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+  drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('dragover'); const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+  fi.addEventListener('change', () => { if (fi.files[0]) loadFile(fi.files[0]); });
+}
+
+function loadNewFile() {
+  document.getElementById('overlay').classList.remove('hidden');
+  document.getElementById('setupBox').style.display = '';
+  document.getElementById('loadingProgress').style.display = 'none';
+}
+
+function loadFile(file) {
+  document.getElementById('setupBox').style.display = 'none';
+  document.getElementById('loadingProgress').style.display = 'block';
+  document.getElementById('loadSub').textContent = 'Reading file…';
+  document.getElementById('pFill').style.width = '20%';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      document.getElementById('pFill').style.width = '60%';
+      document.getElementById('loadSub').textContent = 'Parsing JSON…';
+      const parsed = JSON.parse(e.target.result);
+      document.getElementById('pFill').style.width = '100%';
+      document.getElementById('loadSub').textContent = 'Done!';
+      setTimeout(() => {
+        DATA = parsed;
+        filtered = DATA;
+        document.getElementById('overlay').classList.add('hidden');
+        render();
+      }, 300);
+    } catch(err) {
+      alert('Failed to parse JSON: ' + err.message);
+      document.getElementById('setupBox').style.display = '';
+      document.getElementById('loadingProgress').style.display = 'none';
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── DEMO DATA (50 verbs, fully hardcoded) ──
+function loadDemo() {
+  document.getElementById('setupBox').style.display = 'none';
+  document.getElementById('loadingProgress').style.display = 'block';
+  document.getElementById('loadSub').textContent = 'Loading demo…';
+  document.getElementById('pFill').style.width = '80%';
+
+  const demo = [
+    {verb:"be",en_present_sentence:"He is always kind to his friends.",
+     present:{en_verb:"is",en_sentence:"He is always kind to his friends.",de_verb:"sein",de_sentence:"Er ist immer freundlich zu seinen Freunden."},
+     past:{en_verb:"was",en_sentence:"He was always kind to his friends.",de_verb:"war",de_sentence:"Er war immer freundlich zu seinen Freunden."},
+     perfect:{en_verb:"had been",en_sentence:"He had been kind to his friends for years.",de_verb:"ist gewesen",de_sentence:"Er ist immer freundlich zu seinen Freunden gewesen."},
+     future:{en_verb:"will be",en_sentence:"He will be kind to his friends tomorrow.",de_verb:"wird sein",de_sentence:"Er wird morgen freundlich zu seinen Freunden sein."}},
+    {verb:"have",en_present_sentence:"We have a lot of work to do.",
+     present:{en_verb:"have",en_sentence:"We have a lot of work to do.",de_verb:"haben",de_sentence:"Wir haben viel Arbeit zu erledigen."},
+     past:{en_verb:"had",en_sentence:"We had a lot of work to do yesterday.",de_verb:"hatten",de_sentence:"Wir hatten gestern viel Arbeit zu erledigen."},
+     perfect:{en_verb:"had had",en_sentence:"We had had a lot of work before the deadline.",de_verb:"haben gehabt",de_sentence:"Wir haben vor der Deadline viel Arbeit gehabt."},
+     future:{en_verb:"will have",en_sentence:"We will have a lot of work next week.",de_verb:"werden haben",de_sentence:"Wir werden nächste Woche viel Arbeit haben."}},
+    {verb:"go",en_present_sentence:"We're going to the movies tonight.",
+     present:{en_verb:"go",en_sentence:"We go to the movies every Friday.",de_verb:"gehen",de_sentence:"Wir gehen jeden Freitag ins Kino."},
+     past:{en_verb:"went",en_sentence:"We went to the movies last night.",de_verb:"gingen",de_sentence:"Wir gingen gestern Abend ins Kino."},
+     perfect:{en_verb:"had gone",en_sentence:"We had gone to the movies before dinner.",de_verb:"sind gegangen",de_sentence:"Wir sind vor dem Abendessen ins Kino gegangen."},
+     future:{en_verb:"will go",en_sentence:"We will go to the movies tomorrow.",de_verb:"werden gehen",de_sentence:"Wir werden morgen ins Kino gehen."}},
+    {verb:"make",en_present_sentence:"She makes delicious cakes for everyone.",
+     present:{en_verb:"makes",en_sentence:"She makes delicious cakes for everyone.",de_verb:"machen",de_sentence:"Sie macht köstliche Kuchen für alle."},
+     past:{en_verb:"made",en_sentence:"She made a delicious cake yesterday.",de_verb:"machte",de_sentence:"Sie machte gestern einen köstlichen Kuchen."},
+     perfect:{en_verb:"had made",en_sentence:"She had made several cakes before the party.",de_verb:"hat gemacht",de_sentence:"Sie hat vor der Party mehrere Kuchen gemacht."},
+     future:{en_verb:"will make",en_sentence:"She will make a cake for the celebration.",de_verb:"wird machen",de_sentence:"Sie wird für die Feier einen Kuchen machen."}},
+    {verb:"know",en_present_sentence:"She knows how to play the piano.",
+     present:{en_verb:"knows",en_sentence:"She knows how to play the piano.",de_verb:"wissen",de_sentence:"Sie weiß, wie man Klavier spielt."},
+     past:{en_verb:"knew",en_sentence:"She knew how to solve the problem.",de_verb:"wusste",de_sentence:"Sie wusste, wie man das Problem löst."},
+     perfect:{en_verb:"had known",en_sentence:"She had known the answer all along.",de_verb:"hat gewusst",de_sentence:"Sie hat die Antwort die ganze Zeit gewusst."},
+     future:{en_verb:"will know",en_sentence:"She will know the results by tomorrow.",de_verb:"wird wissen",de_sentence:"Sie wird die Ergebnisse bis morgen wissen."}},
+    {verb:"give",en_present_sentence:"She gives French lessons every week.",
+     present:{en_verb:"gives",en_sentence:"She gives French lessons every week.",de_verb:"geben",de_sentence:"Sie gibt jede Woche Französischstunden."},
+     past:{en_verb:"gave",en_sentence:"She gave a great presentation yesterday.",de_verb:"gab",de_sentence:"Sie gab gestern eine großartige Präsentation."},
+     perfect:{en_verb:"had given",en_sentence:"She had given her best effort on the project.",de_verb:"hat gegeben",de_sentence:"Sie hat ihr Bestes für das Projekt gegeben."},
+     future:{en_verb:"will give",en_sentence:"She will give a speech at the conference.",de_verb:"wird geben",de_sentence:"Sie wird auf der Konferenz eine Rede halten."}},
+    {verb:"find",en_present_sentence:"She always finds a solution to problems.",
+     present:{en_verb:"finds",en_sentence:"She always finds a solution to problems.",de_verb:"finden",de_sentence:"Sie findet immer eine Lösung für Probleme."},
+     past:{en_verb:"found",en_sentence:"She found the missing document in her drawer.",de_verb:"fand",de_sentence:"Sie fand das fehlende Dokument in ihrer Schublade."},
+     perfect:{en_verb:"had found",en_sentence:"She had found the answer before anyone else.",de_verb:"hat gefunden",de_sentence:"Sie hat die Antwort vor allen anderen gefunden."},
+     future:{en_verb:"will find",en_sentence:"She will find a better solution tomorrow.",de_verb:"wird finden",de_sentence:"Sie wird morgen eine bessere Lösung finden."}},
+    {verb:"help",en_present_sentence:"She helps her colleagues when they need it.",
+     present:{en_verb:"helps",en_sentence:"She helps her colleagues when they need it.",de_verb:"helfen",de_sentence:"Sie hilft ihren Kollegen, wenn sie es brauchen."},
+     past:{en_verb:"helped",en_sentence:"She helped her friend move last weekend.",de_verb:"half",de_sentence:"Sie half ihrem Freund letztes Wochenende beim Umzug."},
+     perfect:{en_verb:"had helped",en_sentence:"She had helped the team before the deadline.",de_verb:"hat geholfen",de_sentence:"Sie hat dem Team vor der Deadline geholfen."},
+     future:{en_verb:"will help",en_sentence:"She will help with the project next week.",de_verb:"wird helfen",de_sentence:"Sie wird nächste Woche beim Projekt helfen."}},
+    {verb:"learn",en_present_sentence:"He learns something new every day.",
+     present:{en_verb:"learns",en_sentence:"He learns something new every day.",de_verb:"lernen",de_sentence:"Er lernt jeden Tag etwas Neues."},
+     past:{en_verb:"learned",en_sentence:"He learned French in just six months.",de_verb:"lernte",de_sentence:"Er lernte Französisch in nur sechs Monaten."},
+     perfect:{en_verb:"had learned",en_sentence:"He had learned the basics before starting the course.",de_verb:"hat gelernt",de_sentence:"Er hat die Grundlagen gelernt, bevor er den Kurs begann."},
+     future:{en_verb:"will learn",en_sentence:"He will learn to drive next summer.",de_verb:"wird lernen",de_sentence:"Er wird nächsten Sommer Auto fahren lernen."}},
+    {verb:"work",en_present_sentence:"She works hard to achieve her goals.",
+     present:{en_verb:"works",en_sentence:"She works hard to achieve her goals.",de_verb:"arbeiten",de_sentence:"Sie arbeitet hart, um ihre Ziele zu erreichen."},
+     past:{en_verb:"worked",en_sentence:"She worked overtime to finish the report.",de_verb:"arbeitete",de_sentence:"Sie arbeitete Überstunden, um den Bericht fertigzustellen."},
+     perfect:{en_verb:"had worked",en_sentence:"She had worked there for ten years before retiring.",de_verb:"hat gearbeitet",de_sentence:"Sie hat dort zehn Jahre gearbeitet, bevor sie in Rente ging."},
+     future:{en_verb:"will work",en_sentence:"She will work from home next month.",de_verb:"wird arbeiten",de_sentence:"Sie wird nächsten Monat von zu Hause arbeiten."}},
+    {verb:"speak",en_present_sentence:"She speaks three languages fluently.",
+     present:{en_verb:"speaks",en_sentence:"She speaks three languages fluently.",de_verb:"sprechen",de_sentence:"Sie spricht drei Sprachen fließend."},
+     past:{en_verb:"spoke",en_sentence:"He spoke confidently in front of the audience.",de_verb:"sprach",de_sentence:"Er sprach selbstsicher vor dem Publikum."},
+     perfect:{en_verb:"had spoken",en_sentence:"She had spoken to the manager before the meeting.",de_verb:"hat gesprochen",de_sentence:"Sie hat vor dem Meeting mit dem Manager gesprochen."},
+     future:{en_verb:"will speak",en_sentence:"He will speak at the conference next week.",de_verb:"wird sprechen",de_sentence:"Er wird nächste Woche auf der Konferenz sprechen."}},
+    {verb:"write",en_present_sentence:"She writes in her journal every morning.",
+     present:{en_verb:"writes",en_sentence:"She writes in her journal every morning.",de_verb:"schreiben",de_sentence:"Sie schreibt jeden Morgen in ihr Tagebuch."},
+     past:{en_verb:"wrote",en_sentence:"He wrote a letter to his grandmother.",de_verb:"schrieb",de_sentence:"Er schrieb seiner Großmutter einen Brief."},
+     perfect:{en_verb:"had written",en_sentence:"She had written three books before turning forty.",de_verb:"hat geschrieben",de_sentence:"Sie hat drei Bücher geschrieben, bevor sie vierzig wurde."},
+     future:{en_verb:"will write",en_sentence:"He will write a report on his findings.",de_verb:"wird schreiben",de_sentence:"Er wird einen Bericht über seine Erkenntnisse schreiben."}},
+    {verb:"read",en_present_sentence:"They read books every night before bed.",
+     present:{en_verb:"read",en_sentence:"They read books every night before bed.",de_verb:"lesen",de_sentence:"Sie lesen jeden Abend vor dem Schlafengehen Bücher."},
+     past:{en_verb:"read",en_sentence:"She read the whole novel in one day.",de_verb:"las",de_sentence:"Sie las den ganzen Roman an einem Tag."},
+     perfect:{en_verb:"had read",en_sentence:"He had read all the chapters before the test.",de_verb:"hat gelesen",de_sentence:"Er hat alle Kapitel vor dem Test gelesen."},
+     future:{en_verb:"will read",en_sentence:"She will read the report carefully.",de_verb:"wird lesen",de_sentence:"Sie wird den Bericht sorgfältig lesen."}},
+    {verb:"think",en_present_sentence:"He thinks carefully before making decisions.",
+     present:{en_verb:"thinks",en_sentence:"He thinks carefully before making decisions.",de_verb:"denken",de_sentence:"Er denkt sorgfältig nach, bevor er Entscheidungen trifft."},
+     past:{en_verb:"thought",en_sentence:"She thought about the problem all night.",de_verb:"dachte",de_sentence:"Sie dachte die ganze Nacht über das Problem nach."},
+     perfect:{en_verb:"had thought",en_sentence:"He had thought of a solution before the meeting.",de_verb:"hat gedacht",de_sentence:"Er hat vor dem Meeting an eine Lösung gedacht."},
+     future:{en_verb:"will think",en_sentence:"She will think about the offer before deciding.",de_verb:"wird denken",de_sentence:"Sie wird über das Angebot nachdenken, bevor sie entscheidet."}},
+    {verb:"come",en_present_sentence:"She comes to the office early every morning.",
+     present:{en_verb:"comes",en_sentence:"She comes to the office early every morning.",de_verb:"kommen",de_sentence:"Sie kommt jeden Morgen früh ins Büro."},
+     past:{en_verb:"came",en_sentence:"He came home late last night.",de_verb:"kam",de_sentence:"Er kam letzte Nacht spät nach Hause."},
+     perfect:{en_verb:"had come",en_sentence:"They had come a long way to be here.",de_verb:"ist gekommen",de_sentence:"Er ist weit gereist, um hier zu sein."},
+     future:{en_verb:"will come",en_sentence:"She will come to the party on Saturday.",de_verb:"wird kommen",de_sentence:"Sie wird am Samstag zur Party kommen."}},
+    {verb:"take",en_present_sentence:"She takes notes during every lecture.",
+     present:{en_verb:"takes",en_sentence:"She takes notes during every lecture.",de_verb:"nehmen",de_sentence:"Sie macht sich bei jeder Vorlesung Notizen."},
+     past:{en_verb:"took",en_sentence:"He took the bus to work this morning.",de_verb:"nahm",de_sentence:"Er nahm heute Morgen den Bus zur Arbeit."},
+     perfect:{en_verb:"had taken",en_sentence:"She had taken the wrong road before realizing.",de_verb:"hat genommen",de_sentence:"Sie hat die falsche Straße genommen, bevor sie es merkte."},
+     future:{en_verb:"will take",en_sentence:"He will take a vacation next month.",de_verb:"wird nehmen",de_sentence:"Er wird nächsten Monat Urlaub nehmen."}},
+    {verb:"see",en_present_sentence:"I see a bird in the garden.",
+     present:{en_verb:"see",en_sentence:"I see a bird in the garden.",de_verb:"sehen",de_sentence:"Ich sehe einen Vogel im Garten."},
+     past:{en_verb:"saw",en_sentence:"I saw a beautiful sunset yesterday.",de_verb:"sah",de_sentence:"Ich sah gestern einen wunderschönen Sonnenuntergang."},
+     perfect:{en_verb:"had seen",en_sentence:"She had seen that movie twice already.",de_verb:"hat gesehen",de_sentence:"Sie hat diesen Film schon zweimal gesehen."},
+     future:{en_verb:"will see",en_sentence:"We will see the results next week.",de_verb:"wird sehen",de_sentence:"Wir werden nächste Woche die Ergebnisse sehen."}},
+    {verb:"feel",en_present_sentence:"She feels confident about the presentation.",
+     present:{en_verb:"feels",en_sentence:"She feels confident about the presentation.",de_verb:"fühlen",de_sentence:"Sie fühlt sich bezüglich der Präsentation selbstsicher."},
+     past:{en_verb:"felt",en_sentence:"He felt proud after finishing the marathon.",de_verb:"fühlte",de_sentence:"Er fühlte sich stolz, nachdem er den Marathon beendet hatte."},
+     perfect:{en_verb:"had felt",en_sentence:"She had felt nervous before the interview.",de_verb:"hat gefühlt",de_sentence:"Sie hat sich vor dem Interview nervös gefühlt."},
+     future:{en_verb:"will feel",en_sentence:"You will feel better after some rest.",de_verb:"wird fühlen",de_sentence:"Du wirst dich nach etwas Ruhe besser fühlen."}},
+    {verb:"run",en_present_sentence:"He runs five kilometres every morning.",
+     present:{en_verb:"runs",en_sentence:"He runs five kilometres every morning.",de_verb:"laufen",de_sentence:"Er läuft jeden Morgen fünf Kilometer."},
+     past:{en_verb:"ran",en_sentence:"She ran a marathon last spring.",de_verb:"lief",de_sentence:"Sie lief letzten Frühling einen Marathon."},
+     perfect:{en_verb:"had run",en_sentence:"He had run out of time before completing the task.",de_verb:"ist gelaufen",de_sentence:"Er ist die ganze Strecke gelaufen."},
+     future:{en_verb:"will run",en_sentence:"She will run in the city race next weekend.",de_verb:"wird laufen",de_sentence:"Sie wird nächstes Wochenende am Stadtrennen teilnehmen."}},
+    {verb:"eat",en_present_sentence:"We eat together as a family every evening.",
+     present:{en_verb:"eat",en_sentence:"We eat together as a family every evening.",de_verb:"essen",de_sentence:"Wir essen jeden Abend als Familie zusammen."},
+     past:{en_verb:"ate",en_sentence:"She ate a healthy salad for lunch.",de_verb:"aß",de_sentence:"Sie aß einen gesunden Salat zum Mittagessen."},
+     perfect:{en_verb:"had eaten",en_sentence:"He had eaten before the meeting started.",de_verb:"hat gegessen",de_sentence:"Er hat gegessen, bevor das Meeting begann."},
+     future:{en_verb:"will eat",en_sentence:"We will eat at the new restaurant tonight.",de_verb:"wird essen",de_sentence:"Wir werden heute Abend im neuen Restaurant essen."}},
+    {verb:"buy",en_present_sentence:"We buy local products at the market.",
+     present:{en_verb:"buy",en_sentence:"We buy local products at the market.",de_verb:"kaufen",de_sentence:"Wir kaufen lokale Produkte auf dem Markt."},
+     past:{en_verb:"bought",en_sentence:"She bought a new laptop for work.",de_verb:"kaufte",de_sentence:"Sie kaufte einen neuen Laptop für die Arbeit."},
+     perfect:{en_verb:"had bought",en_sentence:"He had bought the tickets before they sold out.",de_verb:"hat gekauft",de_sentence:"Er hat die Tickets gekauft, bevor sie ausverkauft waren."},
+     future:{en_verb:"will buy",en_sentence:"She will buy a new car next year.",de_verb:"wird kaufen",de_sentence:"Sie wird nächstes Jahr ein neues Auto kaufen."}},
+    {verb:"build",en_present_sentence:"They build innovative products every year.",
+     present:{en_verb:"build",en_sentence:"They build innovative products every year.",de_verb:"bauen",de_sentence:"Sie bauen jedes Jahr innovative Produkte."},
+     past:{en_verb:"built",en_sentence:"They built a new school in the village.",de_verb:"bauten",de_sentence:"Sie bauten eine neue Schule im Dorf."},
+     perfect:{en_verb:"had built",en_sentence:"They had built the house before winter arrived.",de_verb:"haben gebaut",de_sentence:"Sie haben das Haus gebaut, bevor der Winter kam."},
+     future:{en_verb:"will build",en_sentence:"The company will build a new headquarters.",de_verb:"werden bauen",de_sentence:"Das Unternehmen wird eine neue Zentrale bauen."}},
+    {verb:"send",en_present_sentence:"She sends postcards to her friends abroad.",
+     present:{en_verb:"sends",en_sentence:"She sends postcards to her friends abroad.",de_verb:"senden",de_sentence:"Sie schickt ihren Freunden im Ausland Postkarten."},
+     past:{en_verb:"sent",en_sentence:"He sent an important email this morning.",de_verb:"sendete",de_sentence:"Er sendete heute Morgen eine wichtige E-Mail."},
+     perfect:{en_verb:"had sent",en_sentence:"She had sent the documents before the deadline.",de_verb:"hat gesendet",de_sentence:"Sie hat die Dokumente vor der Frist gesendet."},
+     future:{en_verb:"will send",en_sentence:"He will send the report by Friday.",de_verb:"wird senden",de_sentence:"Er wird den Bericht bis Freitag senden."}},
+    {verb:"play",en_present_sentence:"We play football every Saturday.",
+     present:{en_verb:"play",en_sentence:"We play football every Saturday.",de_verb:"spielen",de_sentence:"Wir spielen jeden Samstag Fußball."},
+     past:{en_verb:"played",en_sentence:"She played the piano at the concert.",de_verb:"spielte",de_sentence:"Sie spielte beim Konzert Klavier."},
+     perfect:{en_verb:"had played",en_sentence:"He had played professionally before his injury.",de_verb:"hat gespielt",de_sentence:"Er hat vor seiner Verletzung professionell gespielt."},
+     future:{en_verb:"will play",en_sentence:"The children will play in the park tomorrow.",de_verb:"wird spielen",de_sentence:"Die Kinder werden morgen im Park spielen."}},
+    {verb:"try",en_present_sentence:"She always tries to do her best.",
+     present:{en_verb:"tries",en_sentence:"She always tries to do her best.",de_verb:"versuchen",de_sentence:"Sie versucht immer, ihr Bestes zu geben."},
+     past:{en_verb:"tried",en_sentence:"He tried a new recipe for dinner.",de_verb:"versuchte",de_sentence:"Er versuchte ein neues Rezept zum Abendessen."},
+     perfect:{en_verb:"had tried",en_sentence:"She had tried every option before giving up.",de_verb:"hat versucht",de_sentence:"Sie hat jede Möglichkeit versucht, bevor sie aufgab."},
+     future:{en_verb:"will try",en_sentence:"He will try to finish the project by Monday.",de_verb:"wird versuchen",de_sentence:"Er wird versuchen, das Projekt bis Montag fertigzustellen."}},
+    {verb:"keep",en_present_sentence:"We keep in touch with our old friends.",
+     present:{en_verb:"keep",en_sentence:"We keep in touch with our old friends.",de_verb:"behalten",de_sentence:"Wir behalten den Kontakt zu unseren alten Freunden."},
+     past:{en_verb:"kept",en_sentence:"She kept her promise to her sister.",de_verb:"behielt",de_sentence:"Sie behielt ihr Versprechen an ihre Schwester."},
+     perfect:{en_verb:"had kept",en_sentence:"He had kept all his old letters in a box.",de_verb:"hat behalten",de_sentence:"Er hat alle seine alten Briefe in einer Schachtel behalten."},
+     future:{en_verb:"will keep",en_sentence:"They will keep working until the task is done.",de_verb:"wird behalten",de_sentence:"Sie werden weiterarbeiten, bis die Aufgabe erledigt ist."}},
+    {verb:"ask",en_present_sentence:"She asks her teacher for help when needed.",
+     present:{en_verb:"asks",en_sentence:"She asks her teacher for help when needed.",de_verb:"fragen",de_sentence:"Sie fragt ihren Lehrer um Hilfe, wenn nötig."},
+     past:{en_verb:"asked",en_sentence:"He asked his colleague for advice.",de_verb:"fragte",de_sentence:"Er fragte seinen Kollegen um Rat."},
+     perfect:{en_verb:"had asked",en_sentence:"She had asked the question before class ended.",de_verb:"hat gefragt",de_sentence:"Sie hat die Frage gestellt, bevor der Unterricht endete."},
+     future:{en_verb:"will ask",en_sentence:"He will ask for more information at the meeting.",de_verb:"wird fragen",de_sentence:"Er wird beim Meeting nach weiteren Informationen fragen."}},
+    {verb:"call",en_present_sentence:"She calls her parents every Sunday.",
+     present:{en_verb:"calls",en_sentence:"She calls her parents every Sunday.",de_verb:"anrufen",de_sentence:"Sie ruft ihre Eltern jeden Sonntag an."},
+     past:{en_verb:"called",en_sentence:"He called the doctor immediately.",de_verb:"rief an",de_sentence:"Er rief sofort den Arzt an."},
+     perfect:{en_verb:"had called",en_sentence:"She had called ahead to make a reservation.",de_verb:"hat angerufen",de_sentence:"Sie hat angerufen, um eine Reservierung zu machen."},
+     future:{en_verb:"will call",en_sentence:"He will call you when he arrives.",de_verb:"wird anrufen",de_sentence:"Er wird dich anrufen, wenn er ankommt."}},
+    {verb:"open",en_present_sentence:"She opens the window every morning for fresh air.",
+     present:{en_verb:"opens",en_sentence:"She opens the window every morning for fresh air.",de_verb:"öffnen",de_sentence:"Sie öffnet jeden Morgen das Fenster für frische Luft."},
+     past:{en_verb:"opened",en_sentence:"He opened the door for his guests.",de_verb:"öffnete",de_sentence:"Er öffnete die Tür für seine Gäste."},
+     perfect:{en_verb:"had opened",en_sentence:"She had opened the shop before the others arrived.",de_verb:"hat geöffnet",de_sentence:"Sie hat den Laden geöffnet, bevor die anderen ankamen."},
+     future:{en_verb:"will open",en_sentence:"The new museum will open next spring.",de_verb:"wird öffnen",de_sentence:"Das neue Museum wird nächsten Frühling öffnen."}},
+    {verb:"teach",en_present_sentence:"She teaches mathematics at the local school.",
+     present:{en_verb:"teaches",en_sentence:"She teaches mathematics at the local school.",de_verb:"unterrichten",de_sentence:"Sie unterrichtet Mathematik an der Ortsschule."},
+     past:{en_verb:"taught",en_sentence:"He taught English in Japan for two years.",de_verb:"unterrichtete",de_sentence:"Er unterrichtete zwei Jahre lang Englisch in Japan."},
+     perfect:{en_verb:"had taught",en_sentence:"She had taught the lesson before the substitute arrived.",de_verb:"hat unterrichtet",de_sentence:"Sie hat die Stunde unterrichtet, bevor der Vertretungslehrer ankam."},
+     future:{en_verb:"will teach",en_sentence:"He will teach a new programming course next semester.",de_verb:"wird unterrichten",de_sentence:"Er wird nächstes Semester einen neuen Programmierkurs unterrichten."}},
+    {verb:"listen",en_present_sentence:"She listens carefully to her patients.",
+     present:{en_verb:"listens",en_sentence:"She listens carefully to her patients.",de_verb:"zuhören",de_sentence:"Sie hört ihren Patienten aufmerksam zu."},
+     past:{en_verb:"listened",en_sentence:"He listened to music while working.",de_verb:"hörte zu",de_sentence:"Er hörte beim Arbeiten Musik zu."},
+     perfect:{en_verb:"had listened",en_sentence:"She had listened to the recording several times.",de_verb:"hat zugehört",de_sentence:"Sie hat der Aufnahme mehrmals zugehört."},
+     future:{en_verb:"will listen",en_sentence:"He will listen to your feedback carefully.",de_verb:"wird zuhören",de_sentence:"Er wird deinem Feedback aufmerksam zuhören."}},
+    {verb:"travel",en_present_sentence:"She travels abroad every summer.",
+     present:{en_verb:"travels",en_sentence:"She travels abroad every summer.",de_verb:"reisen",de_sentence:"Sie reist jeden Sommer ins Ausland."},
+     past:{en_verb:"traveled",en_sentence:"He traveled across Europe by train.",de_verb:"reiste",de_sentence:"Er reiste mit dem Zug durch Europa."},
+     perfect:{en_verb:"had traveled",en_sentence:"She had traveled to twenty countries before turning thirty.",de_verb:"hat gereist",de_sentence:"Sie hat gereist, bevor sie dreißig wurde."},
+     future:{en_verb:"will travel",en_sentence:"They will travel to Japan next spring.",de_verb:"wird reisen",de_sentence:"Sie werden nächsten Frühling nach Japan reisen."}},
+    {verb:"cook",en_present_sentence:"He cooks dinner for his family every evening.",
+     present:{en_verb:"cooks",en_sentence:"He cooks dinner for his family every evening.",de_verb:"kochen",de_sentence:"Er kocht jeden Abend das Abendessen für seine Familie."},
+     past:{en_verb:"cooked",en_sentence:"She cooked a delicious Italian meal.",de_verb:"kochte",de_sentence:"Sie kochte ein köstliches italienisches Gericht."},
+     perfect:{en_verb:"had cooked",en_sentence:"He had cooked the meal before the guests arrived.",de_verb:"hat gekocht",de_sentence:"Er hat das Essen gekocht, bevor die Gäste ankamen."},
+     future:{en_verb:"will cook",en_sentence:"She will cook a special meal for the occasion.",de_verb:"wird kochen",de_sentence:"Sie wird für den Anlass ein besonderes Gericht kochen."}},
+    {verb:"drive",en_present_sentence:"He drives to work every day.",
+     present:{en_verb:"drives",en_sentence:"He drives to work every day.",de_verb:"fahren",de_sentence:"Er fährt jeden Tag zur Arbeit."},
+     past:{en_verb:"drove",en_sentence:"She drove her children to school this morning.",de_verb:"fuhr",de_sentence:"Sie fuhr ihre Kinder heute Morgen zur Schule."},
+     perfect:{en_verb:"had driven",en_sentence:"He had driven for hours before stopping.",de_verb:"ist gefahren",de_sentence:"Er ist stundenlang gefahren, bevor er anhielt."},
+     future:{en_verb:"will drive",en_sentence:"She will drive to the airport on Friday.",de_verb:"wird fahren",de_sentence:"Sie wird am Freitag zum Flughafen fahren."}},
+    {verb:"sing",en_present_sentence:"She sings in the choir every Sunday.",
+     present:{en_verb:"sings",en_sentence:"She sings in the choir every Sunday.",de_verb:"singen",de_sentence:"Sie singt jeden Sonntag im Chor."},
+     past:{en_verb:"sang",en_sentence:"He sang a beautiful song at the wedding.",de_verb:"sang",de_sentence:"Er sang auf der Hochzeit ein wunderschönes Lied."},
+     perfect:{en_verb:"had sung",en_sentence:"She had sung professionally for many years.",de_verb:"hat gesungen",de_sentence:"Sie hat viele Jahre professionell gesungen."},
+     future:{en_verb:"will sing",en_sentence:"He will sing at the concert next month.",de_verb:"wird singen",de_sentence:"Er wird nächsten Monat bei dem Konzert singen."}},
+    {verb:"dance",en_present_sentence:"She dances salsa every Thursday evening.",
+     present:{en_verb:"dances",en_sentence:"She dances salsa every Thursday evening.",de_verb:"tanzen",de_sentence:"Sie tanzt jeden Donnerstagabend Salsa."},
+     past:{en_verb:"danced",en_sentence:"They danced all night at the wedding.",de_verb:"tanzte",de_sentence:"Sie tanzten die ganze Nacht auf der Hochzeit."},
+     perfect:{en_verb:"had danced",en_sentence:"She had danced since she was five years old.",de_verb:"hat getanzt",de_sentence:"Sie hat getanzt, seit sie fünf Jahre alt war."},
+     future:{en_verb:"will dance",en_sentence:"He will dance at the performance next week.",de_verb:"wird tanzen",de_sentence:"Er wird nächste Woche bei der Aufführung tanzen."}},
+    {verb:"swim",en_present_sentence:"He swims at the pool every morning.",
+     present:{en_verb:"swims",en_sentence:"He swims at the pool every morning.",de_verb:"schwimmen",de_sentence:"Er schwimmt jeden Morgen im Schwimmbad."},
+     past:{en_verb:"swam",en_sentence:"She swam across the lake last summer.",de_verb:"schwamm",de_sentence:"Sie schwamm letzten Sommer durch den See."},
+     perfect:{en_verb:"had swum",en_sentence:"He had swum competitively in his youth.",de_verb:"ist geschwommen",de_sentence:"Er ist in seiner Jugend Wettkampf geschwommen."},
+     future:{en_verb:"will swim",en_sentence:"She will swim in the championship next month.",de_verb:"wird schwimmen",de_sentence:"Sie wird nächsten Monat bei der Meisterschaft schwimmen."}},
+    {verb:"visit",en_present_sentence:"We visit our grandparents every holiday.",
+     present:{en_verb:"visit",en_sentence:"We visit our grandparents every holiday.",de_verb:"besuchen",de_sentence:"Wir besuchen unsere Großeltern an jedem Feiertag."},
+     past:{en_verb:"visited",en_sentence:"She visited the museum last weekend.",de_verb:"besuchte",de_sentence:"Sie besuchte letztes Wochenende das Museum."},
+     perfect:{en_verb:"had visited",en_sentence:"He had visited Rome before moving there.",de_verb:"hat besucht",de_sentence:"Er hat Rom besucht, bevor er dorthin zog."},
+     future:{en_verb:"will visit",en_sentence:"They will visit us during the holidays.",de_verb:"wird besuchen",de_sentence:"Sie werden uns während der Ferien besuchen."}},
+    {verb:"sleep",en_present_sentence:"She sleeps eight hours every night.",
+     present:{en_verb:"sleeps",en_sentence:"She sleeps eight hours every night.",de_verb:"schlafen",de_sentence:"Sie schläft jede Nacht acht Stunden."},
+     past:{en_verb:"slept",en_sentence:"He slept soundly after the long day.",de_verb:"schlief",de_sentence:"Er schlief nach dem langen Tag tief."},
+     perfect:{en_verb:"had slept",en_sentence:"She had slept well before the exam.",de_verb:"hat geschlafen",de_sentence:"Sie hat gut geschlafen, bevor sie die Prüfung machte."},
+     future:{en_verb:"will sleep",en_sentence:"He will sleep earlier tonight to rest.",de_verb:"wird schlafen",de_sentence:"Er wird heute Nacht früher schlafen, um sich auszuruhen."}},
+    {verb:"plan",en_present_sentence:"She plans her week every Sunday evening.",
+     present:{en_verb:"plans",en_sentence:"She plans her week every Sunday evening.",de_verb:"planen",de_sentence:"Sie plant ihre Woche jeden Sonntagabend."},
+     past:{en_verb:"planned",en_sentence:"They planned a surprise party for her birthday.",de_verb:"plante",de_sentence:"Sie planten eine Überraschungsparty für ihren Geburtstag."},
+     perfect:{en_verb:"had planned",en_sentence:"He had planned the trip months in advance.",de_verb:"hat geplant",de_sentence:"Er hat die Reise Monate im Voraus geplant."},
+     future:{en_verb:"will plan",en_sentence:"She will plan the event for next spring.",de_verb:"wird planen",de_sentence:"Sie wird die Veranstaltung für nächsten Frühling planen."}},
+    {verb:"solve",en_present_sentence:"She solves complex problems with ease.",
+     present:{en_verb:"solves",en_sentence:"She solves complex problems with ease.",de_verb:"lösen",de_sentence:"Sie löst komplexe Probleme mit Leichtigkeit."},
+     past:{en_verb:"solved",en_sentence:"He solved the puzzle in under ten minutes.",de_verb:"löste",de_sentence:"Er löste das Puzzle in weniger als zehn Minuten."},
+     perfect:{en_verb:"had solved",en_sentence:"She had solved the issue before the client noticed.",de_verb:"hat gelöst",de_sentence:"Sie hat das Problem gelöst, bevor der Kunde es bemerkte."},
+     future:{en_verb:"will solve",en_sentence:"The team will solve this challenge together.",de_verb:"wird lösen",de_sentence:"Das Team wird diese Herausforderung gemeinsam lösen."}},
+    {verb:"choose",en_present_sentence:"She always chooses quality over quantity.",
+     present:{en_verb:"chooses",en_sentence:"She always chooses quality over quantity.",de_verb:"wählen",de_sentence:"Sie wählt immer Qualität über Quantität."},
+     past:{en_verb:"chose",en_sentence:"He chose the red car over the blue one.",de_verb:"wählte",de_sentence:"Er wählte das rote Auto dem blauen vor."},
+     perfect:{en_verb:"had chosen",en_sentence:"She had chosen her career path at a young age.",de_verb:"hat gewählt",de_sentence:"Sie hat ihren Berufsweg in jungen Jahren gewählt."},
+     future:{en_verb:"will choose",en_sentence:"He will choose the best candidate for the job.",de_verb:"wird wählen",de_sentence:"Er wird den besten Kandidaten für die Stelle wählen."}},
+    {verb:"meet",en_present_sentence:"We meet for coffee every Friday.",
+     present:{en_verb:"meet",en_sentence:"We meet for coffee every Friday.",de_verb:"treffen",de_sentence:"Wir treffen uns jeden Freitag auf einen Kaffee."},
+     past:{en_verb:"met",en_sentence:"She met her best friend at university.",de_verb:"traf",de_sentence:"Sie traf ihre beste Freundin an der Universität."},
+     perfect:{en_verb:"had met",en_sentence:"He had met the director before the interview.",de_verb:"hat getroffen",de_sentence:"Er hat den Direktor vor dem Vorstellungsgespräch getroffen."},
+     future:{en_verb:"will meet",en_sentence:"They will meet the clients next Tuesday.",de_verb:"wird treffen",de_sentence:"Sie werden die Kunden nächsten Dienstag treffen."}},
+    {verb:"celebrate",en_present_sentence:"We celebrate birthdays with the whole family.",
+     present:{en_verb:"celebrate",en_sentence:"We celebrate birthdays with the whole family.",de_verb:"feiern",de_sentence:"Wir feiern Geburtstage mit der ganzen Familie."},
+     past:{en_verb:"celebrated",en_sentence:"They celebrated their anniversary in Paris.",de_verb:"feierten",de_sentence:"Sie feierten ihren Jahrestag in Paris."},
+     perfect:{en_verb:"had celebrated",en_sentence:"She had celebrated with friends before the official party.",de_verb:"hat gefeiert",de_sentence:"Sie hat mit Freunden gefeiert, bevor die offizielle Party begann."},
+     future:{en_verb:"will celebrate",en_sentence:"We will celebrate the project completion on Friday.",de_verb:"wird feiern",de_sentence:"Wir werden den Projektabschluss am Freitag feiern."}},
+    {verb:"study",en_present_sentence:"She studies two hours every evening.",
+     present:{en_verb:"studies",en_sentence:"She studies two hours every evening.",de_verb:"studieren",de_sentence:"Sie studiert jeden Abend zwei Stunden."},
+     past:{en_verb:"studied",en_sentence:"He studied medicine at the university.",de_verb:"studierte",de_sentence:"Er studierte Medizin an der Universität."},
+     perfect:{en_verb:"had studied",en_sentence:"She had studied the topic thoroughly before the exam.",de_verb:"hat studiert",de_sentence:"Sie hat das Thema gründlich vor der Prüfung studiert."},
+     future:{en_verb:"will study",en_sentence:"He will study abroad for one semester.",de_verb:"wird studieren",de_sentence:"Er wird ein Semester im Ausland studieren."}},
+    {verb:"paint",en_present_sentence:"She paints landscapes in her spare time.",
+     present:{en_verb:"paints",en_sentence:"She paints landscapes in her spare time.",de_verb:"malen",de_sentence:"Sie malt in ihrer Freizeit Landschaften."},
+     past:{en_verb:"painted",en_sentence:"He painted the living room last weekend.",de_verb:"malte",de_sentence:"Er malte letztes Wochenende das Wohnzimmer."},
+     perfect:{en_verb:"had painted",en_sentence:"She had painted over a hundred pictures by then.",de_verb:"hat gemalt",de_sentence:"Sie hatte bis dahin über hundert Bilder gemalt."},
+     future:{en_verb:"will paint",en_sentence:"He will paint the fence this weekend.",de_verb:"wird malen",de_sentence:"Er wird dieses Wochenende den Zaun streichen."}},
+    {verb:"climb",en_present_sentence:"She climbs mountains every summer.",
+     present:{en_verb:"climbs",en_sentence:"She climbs mountains every summer.",de_verb:"klettern",de_sentence:"Sie klettert jeden Sommer auf Berge."},
+     past:{en_verb:"climbed",en_sentence:"They climbed Mount Blanc last year.",de_verb:"kletterte",de_sentence:"Sie kletterten letztes Jahr auf den Mont Blanc."},
+     perfect:{en_verb:"had climbed",en_sentence:"He had climbed three peaks before reaching the summit.",de_verb:"ist geklettert",de_sentence:"Er ist auf drei Gipfel geklettert, bevor er den Gipfel erreichte."},
+     future:{en_verb:"will climb",en_sentence:"She will climb the highest peak next summer.",de_verb:"wird klettern",de_sentence:"Sie wird nächsten Sommer den höchsten Gipfel besteigen."}},
+    {verb:"protect",en_present_sentence:"We protect the environment by recycling.",
+     present:{en_verb:"protect",en_sentence:"We protect the environment by recycling.",de_verb:"schützen",de_sentence:"Wir schützen die Umwelt durch Recycling."},
+     past:{en_verb:"protected",en_sentence:"She protected her team from unfair criticism.",de_verb:"schützte",de_sentence:"Sie schützte ihr Team vor ungerechter Kritik."},
+     perfect:{en_verb:"had protected",en_sentence:"He had protected the data before the system crashed.",de_verb:"hat geschützt",de_sentence:"Er hat die Daten geschützt, bevor das System abstürzte."},
+     future:{en_verb:"will protect",en_sentence:"The new law will protect citizens' rights.",de_verb:"wird schützen",de_sentence:"Das neue Gesetz wird die Rechte der Bürger schützen."}},
+    {verb:"create",en_present_sentence:"We create new products every year.",
+     present:{en_verb:"create",en_sentence:"We create new products every year.",de_verb:"erstellen",de_sentence:"Wir erstellen jedes Jahr neue Produkte."},
+     past:{en_verb:"created",en_sentence:"She created a beautiful painting for the gallery.",de_verb:"erstellte",de_sentence:"Sie erstellte ein wunderschönes Gemälde für die Galerie."},
+     perfect:{en_verb:"had created",en_sentence:"He had created the design before the client changed their mind.",de_verb:"hat erstellt",de_sentence:"Er hat das Design erstellt, bevor der Kunde seine Meinung änderte."},
+     future:{en_verb:"will create",en_sentence:"The team will create a new strategy next quarter.",de_verb:"wird erstellen",de_sentence:"Das Team wird nächstes Quartal eine neue Strategie erstellen."}},
+    {verb:"share",en_present_sentence:"She always shares her knowledge with others.",
+     present:{en_verb:"shares",en_sentence:"She always shares her knowledge with others.",de_verb:"teilen",de_sentence:"Sie teilt ihr Wissen immer mit anderen."},
+     past:{en_verb:"shared",en_sentence:"He shared the good news with his family.",de_verb:"teilte",de_sentence:"Er teilte die guten Neuigkeiten mit seiner Familie."},
+     perfect:{en_verb:"had shared",en_sentence:"They had shared resources before the merger.",de_verb:"hat geteilt",de_sentence:"Sie haben Ressourcen geteilt, bevor die Fusion stattfand."},
+     future:{en_verb:"will share",en_sentence:"She will share the presentation with the team.",de_verb:"wird teilen",de_sentence:"Sie wird die Präsentation mit dem Team teilen."}},
+  ];
+
+  setTimeout(() => {
+    DATA = demo;
+    filtered = DATA;
+    document.getElementById('pFill').style.width = '100%';
+    setTimeout(() => {
+      document.getElementById('overlay').classList.add('hidden');
+      render();
+    }, 300);
+  }, 500);
+}
+
+// ── SEARCH ──
+function onSearch() {
+  searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+  filtered = searchTerm
+    ? DATA.filter(v => v.verb.toLowerCase().includes(searchTerm) || v.en_present_sentence.toLowerCase().includes(searchTerm))
+    : DATA;
+  currentPage = 1;
+  render();
+}
+
+function onPageSizeChange() {
+  pageSize = parseInt(document.getElementById('psz').value);
+  currentPage = 1; render();
+}
+
+// ── CARD TOGGLE ──
+function toggleCard(idx) {
+  const card = document.getElementById('card-' + idx);
+  if (!card) return;
+  const wasOpen = card.classList.contains('open');
+  document.querySelectorAll('.vcard.open').forEach(c => c.classList.remove('open'));
+  if (!wasOpen) card.classList.add('open');
+}
+
+// ── RENDER ──
+const TENSE_CFG = [
+  {key:'present', label:'Present Tense',   color:'var(--c-present)'},
+  {key:'past',    label:'Simple Past',      color:'var(--c-past)'},
+  {key:'perfect', label:'Past Perfect',     color:'var(--c-perfect)'},
+  {key:'future',  label:'Future Tense',     color:'var(--c-future)'},
+];
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderCard(item, globalIdx) {
+  const hasData = item.present && item.present.de_sentence;
+  const pillCls = hasData ? 'cpill ok' : 'cpill no';
+  const pillTxt = hasData ? '✓ ready' : 'demo';
+
+  let bodyHtml = '';
+  if (hasData) {
+    bodyHtml = '<div class="tgrid">';
+    for (const tc of TENSE_CFG) {
+      const t = item[tc.key];
+      if (!t) continue;
+      const audioKey = globalIdx + '_' + tc.key;
+      const deSent = esc(t.de_sentence || '');
+      bodyHtml += `
+      <div class="tblock">
+        <div class="tlabel"><div class="tdot" style="background:${tc.color}"></div><span style="color:${tc.color}">${tc.label}</span></div>
+        <div class="lb">
+          <div class="ltag en">EN</div>
+          <div class="lverb" style="color:${tc.color}">${esc(t.en_verb)}</div>
+          <div class="lsent">${esc(t.en_sentence)}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="lb">
+          <div class="ltag de">DE</div>
+          <div class="lverb de-verb-col">${esc(t.de_verb)}</div>
+          <div class="lsent de-sent">${deSent}</div>
+        </div>
+        <div class="audio-row">
+          <button class="abtn ${playingKey===audioKey?'on':''}" data-key="${audioKey}"
+            onclick="toggleAudio('${t.de_sentence.replace(/'/g,"\\'").replace(/"/g,'&quot;')}','${audioKey}')"
+            title="Listen in German">${playingKey===audioKey?'■':'▶'}</button>
+          <span class="alabel">Hören</span>
+        </div>
+      </div>`;
+    }
+    bodyHtml += '</div>';
+  } else {
+    bodyHtml = `<div class="nodata">No data for this verb in demo. <b>Load verbs_generated.json</b> for all 1,653 verbs.</div>`;
+  }
+
+  return `<div class="vcard" id="card-${globalIdx}">
+    <div class="ch" onclick="toggleCard(${globalIdx})">
+      <div class="cn">${globalIdx+1}</div>
+      <div class="cv">${esc(item.verb)}</div>
+      <div class="cs">${esc(item.en_present_sentence)}</div>
+      <div><span class="${pillCls}">${pillTxt}</span></div>
+      <div class="ctog">▼</div>
+    </div>
+    <div class="cbody">${bodyHtml}</div>
+  </div>`;
+}
+
+function render() {
+  document.getElementById('totalCount').textContent = DATA.length || '–';
+  document.getElementById('showCount').textContent = filtered.length || '–';
+  const main = document.getElementById('main');
+  if (!filtered.length) {
+    main.innerHTML = '<div class="empty"><h3>No verbs found</h3><p>Try a different search.</p></div>';
+    document.getElementById('pag').style.display = 'none'; return;
+  }
+  document.getElementById('pag').style.display = '';
+  const start = (currentPage-1)*pageSize;
+  const end = Math.min(start+pageSize, filtered.length);
+  const page = filtered.slice(start, end);
+  main.innerHTML = page.map((item, li) => renderCard(item, start+li)).join('');
+  renderPag(start, end);
+}
+
+function renderPag(start, end) {
+  const total = filtered.length;
+  const tp = Math.ceil(total/pageSize);
+  document.getElementById('pinfo').textContent = `${start+1}–${end} of ${total}`;
+  const c = document.getElementById('pbtns');
+  let h = `<button class="pbtn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  const range = getRange(currentPage,tp);
+  let prev=0;
+  for(const p of range){
+    if(p-prev>1) h+=`<span style="color:var(--t3);padding:0 3px;font-size:11px">…</span>`;
+    h+=`<button class="pbtn ${p===currentPage?'on':''}" onclick="goPage(${p})">${p}</button>`;
+    prev=p;
+  }
+  h+=`<button class="pbtn" onclick="goPage(${currentPage+1})" ${currentPage===tp?'disabled':''}>›</button>`;
+  c.innerHTML=h;
+}
+function getRange(cur,total){
+  if(total<=7) return Array.from({length:total},(_,i)=>i+1);
+  const s=new Set([1,total,cur]);
+  for(let i=Math.max(1,cur-2);i<=Math.min(total,cur+2);i++) s.add(i);
+  return [...s].sort((a,b)=>a-b);
+}
+function goPage(p){
+  const tp=Math.ceil(filtered.length/pageSize);
+  if(p<1||p>tp) return;
+  currentPage=p; render(); window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ── INIT ──
+setupFileHandlers();
+</script>
+</body>
+</html>
